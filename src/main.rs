@@ -1,12 +1,18 @@
 mod database;
+mod discord;
 mod models;
+mod utils;
 
 use crate::database::Database;
-use crate::models::Asset;
+use crate::models::{Asset, DiscordMessage};
+use bytes::Bytes;
 use dotenv::dotenv;
 use regex::Regex;
+use resvg::usvg::TreeParsing;
 use std::error::Error;
-use tokio::main;
+use std::fs;
+use std::io::Write;
+use tokio::main; // bring trait into scope
 
 #[main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -52,7 +58,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 //database.add_hash_to_db(&asset.hash).await?;
 
                 let bytes = asset.download().await.unwrap();
-                println!("{:#?}", bytes);
+
+                let mut images: Vec<DiscordMessage> = vec![DiscordMessage {
+                    data: bytes.clone(),
+                    file_name: asset.hash.clone(),
+                    file_type: asset.file_type.clone(),
+                }];
+
+                if asset.file_type == String::from("svg") {
+                    let opt = resvg::usvg::Options::default();
+                    let tree = resvg::usvg::Tree::from_data(&bytes, &opt)?;
+                    let rtree = resvg::Tree::from_usvg(&tree);
+                    let mut zoom = 2.0;
+
+                    let (width, height) = rtree.size.to_int_size().dimensions();
+
+                    if width < 20 || height < 20 {
+                        zoom = 10.0;
+                    } else if width <= 500 || height <= 500 {
+                        zoom = 5.0;
+                    }
+
+                    let pixmap_size = rtree.size.to_int_size().scale_by(zoom).unwrap();
+                    let mut pixmap =
+                        resvg::tiny_skia::Pixmap::new(pixmap_size.width(), pixmap_size.height())
+                            .unwrap();
+                    let render_ts = resvg::tiny_skia::Transform::from_scale(zoom, zoom);
+                    rtree.render(render_ts, &mut pixmap.as_mut());
+
+                    let data = pixmap.encode_png()?;
+
+                    images.push(DiscordMessage {
+                        data: Bytes::from(data),
+                        file_name: asset.hash,
+                        file_type: String::from("png"),
+                    });
+                }
+
+                discord::send_message(images).await?;
             }
         }
     }

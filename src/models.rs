@@ -2,8 +2,7 @@ use bytes::Bytes;
 use regex::Regex;
 use serde::Deserialize;
 use sqlx::FromRow;
-use std::io::Write;
-use std::{error::Error, fs::File};
+use std::error::Error;
 
 #[derive(Debug, Clone, Deserialize, FromRow)]
 pub struct AssetDatabase {
@@ -15,6 +14,13 @@ pub struct Asset {
     pub hash: String,
     pub file_type: String,
     pub path: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiscordMessage {
+    pub data: Bytes,
+    pub file_type: String,
+    pub file_name: String,
 }
 
 impl Asset {
@@ -61,15 +67,10 @@ impl Asset {
     }
 
     pub async fn download(&self) -> Result<Bytes, Box<dyn Error>> {
-        let path = format!("./assets/{}.{}", self.hash, self.file_type);
-
         let img_bytes = reqwest::get(&self.get_discord_asset_url())
             .await?
             .bytes()
             .await?;
-
-        let mut file = File::create(&path)?;
-        file.write_all(&img_bytes)?;
 
         Ok(img_bytes)
     }
