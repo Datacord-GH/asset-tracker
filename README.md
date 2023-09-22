@@ -19,6 +19,7 @@ docker run \
 -e WEBHOOK_URL='REPLACE_ME' \
 -e ROLE_ID='REPLACE_ME' \
 -e DB_URL='sqlite://db/asset.db' \
+-e DRY_RUN='false' \
 --mount type=volume,src=datacord-asset-tracker,target=/asset-tracker/db \
 --name asset-tracker \
 datacord-asset-tracker:latest

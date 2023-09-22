@@ -9,6 +9,7 @@ use bytes::Bytes;
 use dotenv::dotenv;
 use regex::Regex;
 use resvg::usvg::TreeParsing;
+use std::env;
 use std::error::Error;
 use tokio::main;
 
@@ -54,6 +55,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         for asset in assets {
             if !database.is_hash_in_db(&asset.hash).await {
                 database.add_hash_to_db(&asset.hash).await?;
+
+                if &env::var("DRY_RUN").expect("failed to find 'DRY_RUN' in env") == "true" {
+                    continue;
+                }
+
                 let bytes = asset.download().await.unwrap();
 
                 let mut images: Vec<DiscordMessage> = vec![DiscordMessage {
@@ -96,6 +102,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+
+    println!("[+] Done parsing asset files");
 
     Ok(())
 }
