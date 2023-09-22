@@ -55,8 +55,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         for asset in assets {
             if database.is_hash_in_db(&asset.hash).await {
-                //database.add_hash_to_db(&asset.hash).await?;
-
+                database.add_hash_to_db(&asset.hash).await?;
+                /*
                 let bytes = asset.download().await.unwrap();
 
                 let mut images: Vec<DiscordMessage> = vec![DiscordMessage {
@@ -96,6 +96,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 discord::send_message(images).await?;
+                */
             }
         }
     }
