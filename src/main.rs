@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let assets = asset_files.get_all_assets().await?;
 
         for asset in assets {
-            if database.is_hash_in_db(&asset.hash).await {
+            if !database.is_hash_in_db(&asset.hash).await {
                 database.add_hash_to_db(&asset.hash).await?;
                 /*
                 let bytes = asset.download().await.unwrap();
